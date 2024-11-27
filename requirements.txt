@@ -4,4 +4,3 @@ pandas
 matplotlib
 japanize-matplotlib
 seaborn
-math

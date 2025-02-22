@@ -18,17 +18,6 @@ rating_to_value = {
     'C': 0.1
 }
 
-# 各評価項目の重み（総和が1.0になるように設定）
-weights = {
-    '能力': 0.3,
-    '馬場': 0.1,
-    'コース': 0.1,
-    '展開': 0.3,
-    '調教': 0.05,
-    '血統': 0.1,
-    '枠番': 0.05
-}
-
 # 払い戻し率の設定
 payout_rate = 0.70
 
@@ -43,6 +32,14 @@ st.sidebar.title('期待値計算')
 st.sidebar.markdown('#### 各馬の期待値を計算し、ランキング化します')
 st.title("競馬予想期待値計算ツール")
 
+with st.expander("ツールの使い方"):
+    st.markdown("""
+    以下のステップに従って利用してください
+    - 各評価項目の評価を記入したCSVファイルをアップロード
+    - 評価項目の重みづけを入力（総和が1.0になるように調整！）
+    - 「計算」ボタンを押すと好走率と期待値のランキングが出力されます
+""")
+
 # CSVファイルのアップロード
 uploaded_file = st.file_uploader("CSVファイルをアップロードしてください", type=["csv"])
 
@@ -53,7 +50,7 @@ if uploaded_file is not None:
     st.write(df)
 
     # 各評価項目を数値化
-    for column in weights.keys():
+    for column in ['能力', '馬場', 'コース', '展開', '調教', '血統', '枠番']:
         df[column] = df[column].map(rating_to_value)
 
     # レーダーチャート表示用のタブ作成
@@ -62,10 +59,10 @@ if uploaded_file is not None:
         
     for i, tab in enumerate(name_tabs):
         with tab:
-            horse_data = df.iloc[i][list(weights.keys())].values
+            horse_data = df.iloc[i][['能力', '馬場', 'コース', '展開', '調教', '血統', '枠番']].values
                 
             # レーダーチャート用の設定
-            num_vars = len(weights)
+            num_vars = len(['能力', '馬場', 'コース', '展開', '調教', '血統', '枠番'])
             angles = [n / float(num_vars) * 2 * pi for n in range(num_vars)]
             angles += angles[:1]
                 
@@ -77,7 +74,7 @@ if uploaded_file is not None:
             ax.plot(angles, values, color='red', linewidth=2)
 
             # 項目の順番を「能力」が北に来るように調整
-            labels = list(weights.keys())
+            labels = ['能力', '馬場', 'コース', '展開', '調教', '血統', '枠番']
             ax.set_xticks(angles[:-1])
             ax.set_xticklabels(labels, fontsize=12)
 
@@ -92,9 +89,22 @@ if uploaded_file is not None:
                 
             st.pyplot(fig)
     
-    # 計算ボタン
-    if st.button("計算"):
-        st.divider()
+    # 評価項目の重みを入力するフォーム
+    with st.form(key='weight_form'):
+        st.markdown("### 評価項目の重みを入力してください（半角必須）")
+        weights = {}
+        for column in ['能力', '馬場', 'コース', '展開', '調教', '血統', '枠番']:
+            weight = st.text_input(f"{column}の重み", value=0.0)
+            weights[column] = float(weight)
+
+        submit_button = st.form_submit_button(label='計算')
+
+    if submit_button:
+        total_weight = sum(weights.values())
+        if total_weight != 1.0:
+            st.warning("重みの総和が1.0になるように設定してください")
+        else:
+            st.divider()
         # 各馬の1着になる確率の計算
         df['好走率'] = 0
         for column, weight in weights.items():

@@ -101,7 +101,7 @@ if uploaded_file is not None:
 
     if submit_button:
         total_weight = sum(weights.values())
-        if total_weight != 1.0:
+        if abs(total_weight - 1.0) > 1e-9::
             st.warning("重みの総和が1.0になるように設定してください")
         else:
             st.divider()
